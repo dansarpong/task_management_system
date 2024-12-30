@@ -1,38 +1,43 @@
-from flask import Flask, redirect, url_for, session, render_template
-from authlib.integrations.flask_client import OAuth
 import os
+import sdk_helper
+from flask import Flask, redirect, url_for, session, render_template, request
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # Use a secure random key in production
-oauth = OAuth(app)
+app.secret_key = os.getenv('SECRET_KEY')
 
-oauth.register(
-    name='oidc',
-    authority='https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_E7fP27kIs',
-    client_id='5v50qj5qurvl71bhut7r34uor1',
-    client_secret='<client secret>',
-    server_metadata_url='https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_E7fP27kIs/.well-known/openid-configuration',
-    client_kwargs={'scope': 'phone openid email'}
-)
-
+# Route for the home page
 @app.route('/')
 def index():
-    return render_template('index.html')
-    
-@app.route('/login')
+    user = session.get('user')
+    if not user:
+        return render_template('index.html')
+    return redirect(url_for('dashboard'))
+
+# Route for the dashboard page
+@app.route('/dashboard')
+def dashboard():
+    user = sdk_helper.get_user_details(session['user'])
+    roles = sdk_helper.get_user_groups(user['Username'])
+    return render_template('dashboard.html', role=roles[0]['GroupName'])
+
+# Route for the login page and handling login logic
+@app.route('/login', methods=['POST', 'GET'])
 def login():
-    # Alternate option to redirect to /authorize
-    # redirect_uri = url_for('authorize', _external=True)
-    # return oauth.oidc.authorize_redirect(redirect_uri)
-    return oauth.oidc.authorize_redirect('https://d84l1y8p4kdic.cloudfront.net')
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        response = sdk_helper.log_in_user(username, password)
+        session['user'] = response['AuthenticationResult']['AccessToken']
+        return redirect(url_for('dashboard'))
 
-@app.route('/authorize')
-def authorize():
-    token = oauth.oidc.authorize_access_token()
-    user = token['userinfo']
-    session['user'] = user
-    return redirect(url_for('index'))
+    return render_template('login.html')
 
+# Route for the signup page
+@app.route('/signup')
+def signup():
+    return render_template('signup.html')
+
+# Route for logging out the user
 @app.route('/logout')
 def logout():
     session.pop('user', None)
