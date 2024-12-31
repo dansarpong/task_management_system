@@ -3,7 +3,7 @@ import sdk_helper
 from flask import Flask, redirect, url_for, session, render_template, request
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY')
+app.secret_key = os.urandom(24)
 
 # Route for the home page
 @app.route('/')
@@ -33,9 +33,34 @@ def login():
     return render_template('login.html')
 
 # Route for the signup page
-@app.route('/signup')
+@app.route('/signup', methods=['POST', 'GET'])
 def signup():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+        group_name = request.form['group_name']
+        try:
+            response = sdk_helper.sign_up_user(username, password, email, group_name)
+        except Exception as e:
+            return str(e)
+        session['username'] = username
+        return redirect(url_for('confirm'))
+
     return render_template('signup.html')
+
+# Route for the confirmation page
+@app.route('/confirm', methods=['POST', 'GET'])
+def confirm():
+    if request.method == 'POST':
+        print(request.form)
+        confirmation_code = request.form['code']
+        response = sdk_helper.confirm_user(session['username'], confirmation_code)
+        session.pop('username', None)
+        print(response)
+        return redirect(url_for('login'))
+
+    return render_template('confirm.html')
 
 # Route for logging out the user
 @app.route('/logout')

@@ -24,6 +24,45 @@ def generate_secret_hash(username):
     ).digest()
     return base64.b64encode(dig).decode('utf-8')
 
+def sign_up_user(username, password, email, group_name):
+    """
+    Sign up a user in Cognito, including the SECRET_HASH if required, and add the user to a group.
+    Validate the group name before creating the user.
+    """
+    # Validate group name
+    try:
+        cognito_client.get_group(
+            GroupName=group_name,
+            UserPoolId=os.getenv('USER_POOL_ID')
+        )
+    except cognito_client.exceptions.ResourceNotFoundException:
+        raise ValueError(f"Group '{group_name}' does not exist.")
+    
+    secret_hash = generate_secret_hash(username)
+    
+    # Sign up user
+    response = cognito_client.sign_up(
+        ClientId=client_id,
+        SecretHash=secret_hash,
+        Username=username,
+        Password=password,
+        UserAttributes=[
+            {
+                'Name': 'email',
+                'Value': email
+            },
+        ]
+    )
+    
+    # Add user to group
+    cognito_client.admin_add_user_to_group(
+        UserPoolId=os.getenv('USER_POOL_ID'),
+        Username=username,
+        GroupName=group_name
+    )
+    
+    return response
+
 def confirm_user(username, confirmation_code):
     """
     Confirm a user in Cognito using the confirmation code sent to the user.
@@ -78,9 +117,3 @@ def get_user_groups(username):
     except Exception as e:
         print(f"Error retrieving groups for user {username}: {e}")
         return None
-
-# Example usage
-# user = log_in_user('test', 'SecurePassword1234#$')
-# user = get_user_details(user['AuthenticationResult']['AccessToken'])
-# groups = get_user_groups(user['Username'])
-# print(groups)
