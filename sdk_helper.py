@@ -1,11 +1,13 @@
 import os
-import boto3
+import json
 import hmac
-import hashlib
+import boto3
 import base64
+import hashlib
+import requests
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 region = os.getenv('AWS_REGION')
 client_id = os.getenv('APP_CLIENT_ID')
 client_secret = os.getenv('APP_CLIENT_SECRET')
@@ -123,6 +125,22 @@ def get_tasks(id_token, username=""):
     response = requests.request("GET", url, headers=headers, data={})
     result = sorted(response.json(), key=lambda x: x['id']['N'])
     return result
+
+
+def create_task(id_token, task_name, task_status, task_assignee, task_deadline):
+    """
+    Create a task in the DynamoDB table using the API Gateway.
+    """
+    headers = {'Token': id_token}
+    payload = json.dumps({
+        'name': task_name,
+        'status': task_status,
+        'assignee': task_assignee,
+        'deadline': task_deadline
+    })
+    response = requests.request("POST", url, headers=headers, data=payload)
+    return response.json()
+
 
 # def get_user_email(access_token):
 #     """
