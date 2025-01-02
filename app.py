@@ -18,10 +18,30 @@ def index():
 
 
 # Route for the dashboard page
-@app.route('/dashboard')
+@app.route('/dashboard', methods=['POST', 'GET', 'PUT'])
 def dashboard():
-    return render_template('dashboard.html', role=session['groups'][0])
+    if request.method == 'POST':
+        task_name = request.form['name']
+        task_status = request.form['status']
+        task_assignee = request.form['assignee']
+        task_deadline = request.form['deadline']
+        try:
+            sdk.create_task(session['IdToken'], task_name, task_status,
+                            task_assignee, task_deadline)
+        except Exception as e:
+            return str(e)
+        
+        
 
+    # Default view
+    if 'Admins' in session['groups']:
+        tasks = sdk.get_tasks(session['IdToken'])
+        return render_template('admin.html', role='Admin', tasks=tasks)
+    elif 'Members' in session['groups']:
+        tasks = sdk.get_tasks(session['IdToken'], session['username'])
+        return render_template('members.html', role='Member', tasks=tasks)
+    print(session['groups'])
+    return redirect(url_for('login')) # Or return a 403 Forbidden error (later)
 
 # Route for the login page and handling login logic
 @app.route('/login', methods=['POST', 'GET'])

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to your Dashboard</h1>
+        {% block top %}{% endblock %}
+        {% block tasks_title %}{% endblock %}
+        <ul>
+            {% for task in tasks %}
+            <li>{{ task.id.N }} | {{ task.name.S }} | ({{ task.status.S }}) | {{ task.deadline.S }} | {{ task.assignee.S }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

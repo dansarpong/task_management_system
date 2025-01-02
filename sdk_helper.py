@@ -110,6 +110,20 @@ def get_user_groups(username):
         print(f"Error retrieving groups for user {username}: {e}")
         return None
 
+
+# API Gateway requests
+def get_tasks(id_token, username=""):
+    """
+    Get tasks from the DynamoDB table using the API Gateway.
+    An admin provides no username and can view all tasks,
+    while a user provides their username to view only their tasks.
+    """
+    headers = {'Token': id_token}
+    headers['Member'] = username if username else ''
+    response = requests.request("GET", url, headers=headers, data={})
+    result = sorted(response.json(), key=lambda x: x['id']['N'])
+    return result
+
 # def get_user_email(access_token):
 #     """
 #     Get the user email from Cognito using the access token.
