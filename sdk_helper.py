@@ -6,15 +6,16 @@ import base64
 from dotenv import load_dotenv
 
 load_dotenv()
-
 region = os.getenv('AWS_REGION')
 client_id = os.getenv('APP_CLIENT_ID')
 client_secret = os.getenv('APP_CLIENT_SECRET')
 cognito_client = boto3.client('cognito-idp', region_name=region)
+url = os.getenv('URL')
+
 
 def generate_secret_hash(username):
     """
-    Generate the SECRET_HASH required for Cognito when the App Client has a secret.
+    Generate the SECRET_HASH required for Cognito.
     """
     message = username + client_id
     dig = hmac.new(
@@ -24,9 +25,10 @@ def generate_secret_hash(username):
     ).digest()
     return base64.b64encode(dig).decode('utf-8')
 
-def sign_up_user(username, password, email, group_name):
+
+def sign_up_user(username, email, password, group_name):
     """
-    Sign up a user in Cognito, including the SECRET_HASH if required, and add the user to a group.
+    Sign up a user in Cognito and add the user to a group.
     Validate the group name before creating the user.
     """
     # Validate group name
@@ -37,10 +39,8 @@ def sign_up_user(username, password, email, group_name):
         )
     except cognito_client.exceptions.ResourceNotFoundException:
         raise ValueError(f"Group '{group_name}' does not exist.")
-    
     secret_hash = generate_secret_hash(username)
-    
-    # Sign up user
+
     response = cognito_client.sign_up(
         ClientId=client_id,
         SecretHash=secret_hash,
@@ -53,15 +53,14 @@ def sign_up_user(username, password, email, group_name):
             },
         ]
     )
-    
     # Add user to group
     cognito_client.admin_add_user_to_group(
         UserPoolId=os.getenv('USER_POOL_ID'),
         Username=username,
         GroupName=group_name
     )
-    
     return response
+
 
 def confirm_user(username, confirmation_code):
     """
@@ -76,6 +75,7 @@ def confirm_user(username, confirmation_code):
         ConfirmationCode=confirmation_code
     )
     return response
+
 
 def log_in_user(username, password):
     """
@@ -94,14 +94,6 @@ def log_in_user(username, password):
     )
     return response
 
-def get_user_details(access_token):
-    """
-    Get the user details from Cognito using the access token.
-    """
-    response = cognito_client.get_user(
-        AccessToken=access_token
-    )
-    return response
 
 def get_user_groups(username):
     """
@@ -112,8 +104,17 @@ def get_user_groups(username):
             UserPoolId=os.getenv('USER_POOL_ID'),
             Username=username
         )
-        return response['Groups']
+        return [group['GroupName'] for group in response['Groups']]
 
     except Exception as e:
         print(f"Error retrieving groups for user {username}: {e}")
         return None
+
+# def get_user_email(access_token):
+#     """
+#     Get the user email from Cognito using the access token.
+#     """
+#     response = cognito_client.get_user(
+#         AccessToken=access_token
+#     )
+#     return response['UserAttributes'][0]['Value']
