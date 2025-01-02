@@ -9,13 +9,7 @@
 <body>
     <div class="container">
         <h1>Welcome to your Dashboard</h1>
-        {% block top %}{% endblock %}
-        {% block tasks_title %}{% endblock %}
-        <ul>
-            {% for task in tasks %}
-            <li>{{ task.id.N }} | {{ task.name.S }} | ({{ task.status.S }}) | {{ task.deadline.S }} | {{ task.assignee.S }}</li>
-            {% endfor %}
-        </ul>
+        {% block content %}{% endblock %}
     </div>
 </body>
 </html>

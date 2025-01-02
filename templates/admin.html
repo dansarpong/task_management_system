@@ -1,6 +1,6 @@
 {% extends "dashboard_base.html" %}
 {% block title %}Admin Dashboard{% endblock %}
-{% block top %}
+{% block content %}
     <form method="POST" action="{{ url_for('create_task') }}">
         <div class="form-group">
             <label for="name">Task Name:</label>
@@ -11,7 +11,7 @@
             <input type="date" id="deadline" name="deadline">
         </div>
         <div class="form-group">
-            <label for="assignee">Assignee:</label>
+            <label for="assignee">Assigned To:</label>
             <input type="text" id="assignee" name="assignee">
         </div>
         <div class="form-group">
@@ -24,7 +24,20 @@
         </div>
         <button type="submit">Create Task</button>
     </form>
-{% endblock %}
-{% block tasks_title %}
     <h2>All Tasks</h2>
+    {% for task in tasks %}
+    <div>
+        <form method="POST" action="{{ url_for('update_task', task_id=task.id.N) }}">
+            <input type="text" name="name" value="{{ task.name.S }}" required>
+            <input type="date" name="deadline" value="{{ task.deadline.S }}">
+            <input type="text" name="assignee" value="{{ task.assignee.S }}">
+            <select name="status">
+                <option value="pending" {% if task.status.S == 'pending' %}selected{% endif %}>pending</option>
+                <option value="ongoing" {% if task.status.S == 'ongoing' %}selected{% endif %}>ongoing</option>
+                <option value="completed" {% if task.status.S == 'completed' %}selected{% endif %}>completed</option>
+            </select>
+            <button type="submit">Update Task</button>
+        </form>
+    </div>
+{% endfor %}
 {% endblock %}

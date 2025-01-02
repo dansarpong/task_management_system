@@ -110,10 +110,25 @@ def create_task():
     task_name = request.form['name']
     task_status = request.form['status']
     task_assignee = request.form['assignee']
-    task_deadline = request.form['deadline']
+    task_deadline = request.form['deadline'] or None
     try:
         sdk.create_task(session['IdToken'], task_name, task_status,
                         task_assignee, task_deadline)
+    except Exception as e:
+        return str(e)
+    return redirect(url_for('dashboard'))
+
+@app.route('/update_task/<task_id>', methods=['POST'])
+def update_task(task_id):
+    """
+    Update a task in the database and redirect to the dashboard.
+    """
+    task_name = request.form['name']
+    task_status = request.form['status']
+    task_assignee = request.form['assignee']
+    task_deadline = request.form['deadline'] or None
+    try:
+        sdk.update_task(session['IdToken'], task_id, task_name, task_status, task_assignee, task_deadline)
     except Exception as e:
         return str(e)
     return redirect(url_for('dashboard'))

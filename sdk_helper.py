@@ -123,7 +123,7 @@ def get_tasks(id_token, username=""):
     headers = {'Token': id_token}
     headers['Member'] = username if username else ''
     response = requests.request("GET", url, headers=headers, data={})
-    result = sorted(response.json(), key=lambda x: x['id']['N'])
+    result = sorted(response.json(), key=lambda x: int(x['id']['N']))
     return result
 
 
@@ -136,11 +136,25 @@ def create_task(id_token, task_name, task_status, task_assignee, task_deadline):
         'name': task_name,
         'status': task_status,
         'assignee': task_assignee,
-        'deadline': task_deadline
+        'deadline': task_deadline if task_deadline else None
     })
     response = requests.request("POST", url, headers=headers, data=payload)
     return response.json()
 
+
+def update_task(id_token, task_id, task_name, task_status, task_assignee, task_deadline):
+    """
+    Update a task in the DynamoDB table using the API Gateway.
+    """
+    headers = {'Token': id_token}
+    payload = json.dumps({
+        'name': task_name,
+        'status': task_status,
+        'assignee': task_assignee,
+        'deadline': task_deadline if task_deadline else None
+    })
+    response = requests.request("PUT", f"{url}/{task_id}", headers=headers, data=payload)
+    return response.json()
 
 # def get_user_email(access_token):
 #     """
