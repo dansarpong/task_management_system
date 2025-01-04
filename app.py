@@ -20,16 +20,16 @@ def index():
 
 
 # Route for the dashboard page
-@app.route('/dashboard', methods=['POST', 'GET', 'PUT'])
+@app.route('/dashboard')
 def dashboard():
     # Default view
-    if 'Admins' in session['groups']:
-        tasks = sdk.get_tasks(session['IdToken'])
-        return render_template('admin.html', role='Admin', tasks=tasks)
-    elif 'Members' in session['groups']:
-        tasks = sdk.get_tasks(session['IdToken'], session['username'])
-        return render_template('members.html', role='Member', tasks=tasks)
-    print(session['groups'])
+    # if 'Admins' in session['groups']:
+    tasks = get_tasks(session['IdToken'])
+    return render_template('admin.html', role='Admin', tasks=tasks)
+    # elif 'Members' in session['groups']:
+        # tasks = get_tasks(session['IdToken'], session['username'])
+        # return render_template('members.html', role='Member', tasks=tasks)
+    # print(session['groups'])
     return redirect(url_for('login')) # Or return a 403 Forbidden error (later)
 
 # Route for the login page and handling login logic
@@ -42,6 +42,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         try:
+            path = "/users/login"
             payload = json.dumps({
                 "username": username,
                 "password": password
@@ -49,10 +50,12 @@ def login():
             headers = {
                 'Content-Type': 'application/json'
             }
-            response = requests.request("POST", url, headers=headers, data=payload)
+            response = requests.post(url + path, headers=headers, data=payload).json()
+            # print(response)
             session['username'] = username
             # session['groups'] = sdk.get_user_groups(session['username'])
             session['IdToken'] = response['AuthenticationResult']['IdToken']
+            # print(session["IdToken"])
             session['AccessToken'] = response[
                 'AuthenticationResult']['AccessToken']
         except Exception as e:
@@ -75,6 +78,7 @@ def signup():
         password = request.form['password']
         group_name = request.form['group_name']
         try:
+            path = "/users/signup"
             payload = json.dumps({
             "username": username,
             "password": password,
@@ -85,7 +89,7 @@ def signup():
             'Content-Type': 'application/json'
             }
 
-            requests.request("POST", url, headers=headers, data=payload)
+            requests.post(url + path, headers=headers, data=payload)
         except Exception as e:
             return str(e)
         session['username'] = username
@@ -104,6 +108,7 @@ def confirm():
     if request.method == 'POST':
         confirmation_code = request.form['code']
         try:
+            path = "/users/signup/confirm"
             payload = json.dumps({
             "username": session['username'],
             "confirmation_code": confirmation_code
@@ -111,7 +116,7 @@ def confirm():
             headers = {
             'Content-Type': 'application/json'
             }
-            requests.request("POST", url, headers=headers, data=payload)
+            requests.post(url + path, headers=headers, data=payload)
         except Exception as e:
             return str(e)
         finally:
@@ -127,6 +132,23 @@ def confirm():
 def logout():
     session.clear()
     return redirect(url_for('index'))
+
+
+# Tasks routes
+def get_tasks(IdToken, username=None):
+    """
+    Get all tasks for the user.
+    """
+    path = "/tasks"
+    payload = {}
+    headers = {
+    'Token': IdToken,
+    'Member': username if username else ''
+    }
+
+    response = requests.get(url + path, headers=headers, data=payload).json()
+    return response
+
 
 @app.route('/create_task', methods=['POST'])
 def create_task():
