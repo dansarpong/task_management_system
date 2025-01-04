@@ -55,7 +55,6 @@ def login():
             session['username'] = username
             # session['groups'] = sdk.get_user_groups(session['username'])
             session['IdToken'] = response['AuthenticationResult']['IdToken']
-            # print(session["IdToken"])
             session['AccessToken'] = response[
                 'AuthenticationResult']['AccessToken']
         except Exception as e:
@@ -160,8 +159,18 @@ def create_task():
     task_assignee = request.form['assignee']
     task_deadline = request.form['deadline'] or None
     try:
-        sdk.create_task(session['IdToken'], task_name, task_status,
-                        task_assignee, task_deadline)
+        path = "/tasks"
+        payload = json.dumps({
+            "name": task_name,
+            "status": task_status,
+            "assignee": task_assignee,
+            "deadline": task_deadline
+        })
+        headers = {
+            'Content-Type': 'application/json',
+            'Token': session['IdToken']
+        }
+        requests.post(url + path, headers=headers, data=payload)
     except Exception as e:
         return str(e)
     return redirect(url_for('dashboard'))
@@ -176,7 +185,18 @@ def update_task(task_id):
     task_assignee = request.form['assignee']
     task_deadline = request.form['deadline'] or None
     try:
-        sdk.update_task(session['IdToken'], task_id, task_name, task_status, task_assignee, task_deadline)
+        path = f"/tasks/{task_id}"
+        payload = json.dumps({
+            "name": task_name,
+            "status": task_status,
+            "assignee": task_assignee,
+            "deadline": task_deadline
+        })
+        headers = {
+            'Content-Type': 'application/json',
+            'Token': session['IdToken']
+        }
+        requests.put(url + path, headers=headers, data=payload)
     except Exception as e:
         return str(e)
     return redirect(url_for('dashboard'))
