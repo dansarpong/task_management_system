@@ -1,11 +1,13 @@
 import os
-import sdk_helper as sdk
+import json
+import requests
 from flask import Flask, redirect, url_for, render_template, session, request
 
 
 # Initialize the Flask app
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+url = "https://2tzh9snyml.execute-api.eu-west-1.amazonaws.com/Test/"
 
 
 # Route for the home page
@@ -40,9 +42,16 @@ def login():
         username = request.form['username']
         password = request.form['password']
         try:
-            response = sdk.log_in_user(username, password)
+            payload = json.dumps({
+                "username": username,
+                "password": password
+            })
+            headers = {
+                'Content-Type': 'application/json'
+            }
+            response = requests.request("POST", url, headers=headers, data=payload)
             session['username'] = username
-            session['groups'] = sdk.get_user_groups(session['username'])
+            # session['groups'] = sdk.get_user_groups(session['username'])
             session['IdToken'] = response['AuthenticationResult']['IdToken']
             session['AccessToken'] = response[
                 'AuthenticationResult']['AccessToken']
@@ -66,7 +75,17 @@ def signup():
         password = request.form['password']
         group_name = request.form['group_name']
         try:
-            sdk.sign_up_user(username, email, password, group_name)
+            payload = json.dumps({
+            "username": username,
+            "password": password,
+            "email": email,
+            "group_name": group_name
+            })
+            headers = {
+            'Content-Type': 'application/json'
+            }
+
+            requests.request("POST", url, headers=headers, data=payload)
         except Exception as e:
             return str(e)
         session['username'] = username
@@ -85,11 +104,18 @@ def confirm():
     if request.method == 'POST':
         confirmation_code = request.form['code']
         try:
-            sdk.confirm_user(session['username'], confirmation_code)
+            payload = json.dumps({
+            "username": session['username'],
+            "confirmation_code": confirmation_code
+            })
+            headers = {
+            'Content-Type': 'application/json'
+            }
+            requests.request("POST", url, headers=headers, data=payload)
         except Exception as e:
             return str(e)
         finally:
-            session.pop('user', None)
+            session.pop('username', None)
 
         return redirect(url_for('login'))
 
@@ -132,7 +158,6 @@ def update_task(task_id):
     except Exception as e:
         return str(e)
     return redirect(url_for('dashboard'))
-
 
 if __name__ == '__main__':
     app.run(debug=True)
