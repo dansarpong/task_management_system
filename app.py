@@ -62,7 +62,7 @@ def login():
             session['AccessToken'] = response[
                 'AuthenticationResult']['AccessToken']
         except Exception as e:
-            return str(e)
+            return render_template('error.html', error_code=500, error_message=str(e))
 
         return redirect(url_for('dashboard'))
 
@@ -94,7 +94,7 @@ def signup():
 
             requests.post(url + path, headers=headers, data=payload)
         except Exception as e:
-            return str(e)
+            return render_template('error.html', error_code=500, error_message=str(e))
         session['username'] = username
         session['email'] = email
         return redirect(url_for('confirm'))
@@ -123,7 +123,7 @@ def confirm():
             }
             requests.post(url + path, headers=headers, data=payload)
         except Exception as e:
-            return str(e)
+            return render_template('error.html', error_code=500, error_message=str(e))
         finally:
             session.pop('username', None)
 
@@ -163,7 +163,7 @@ def create_task():
         }
         requests.post(url + path, headers=headers, data=payload)
     except Exception as e:
-        return str(e)
+        return render_template('error.html', error_code=500, error_message=str(e))
     return redirect(url_for('dashboard'))
 
 
@@ -190,7 +190,7 @@ def update_task(task_id):
         }
         requests.put(url + path, headers=headers, data=payload)
     except Exception as e:
-        return str(e)
+        return render_template('error.html', error_code=500, error_message=str(e))
     return redirect(url_for('dashboard'))
 
 
@@ -219,6 +219,20 @@ def get_users(IdToken):
     }
     response = requests.get(url + path, headers=headers).json()
     return response
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('error.html', error_code=404, error_message="Page not found"), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('error.html', error_code=500, error_message="Internal server error"), 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    return render_template('error.html', error_code=500, error_message="An unknown error occured"), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
