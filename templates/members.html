@@ -1,10 +1,10 @@
 {% extends "dashboard_base.html" %}
 {% block title %}Team Dashboard{% endblock %}
 {% block content %}
-    <h2>Your Tasks</h2>
-    <ul>
+    <h2 class="text-xl font-bold mb-4">Your Tasks</h2>
+    <ul class="list-disc pl-5">
         {% for task in tasks %}
-        <li>{{ task.id.N }} | {{ task.name.S }} | ({{ task.status.S }}) | {{ task.deadline.S }} | {{ task.assignee.S }}</li>
+        <li class="mb-2">{{ task.id.N }} | {{ task.name.S }} | ({{ task.status.S }}) | {{ task.deadline.S }} | {{ task.assignee.S }}</li>
         {% endfor %}
     </ul>
 {% endblock %}
