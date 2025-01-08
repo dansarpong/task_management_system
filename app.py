@@ -27,7 +27,8 @@ def dashboard():
     # Default view
     if 'Admins' in session['groups']:
         tasks = get_tasks(session['IdToken'])
-        return render_template('admin.html', role='Admin', tasks=tasks)
+        users = get_users(session['IdToken'])
+        return render_template('admin.html', role='Admin', tasks=tasks, users=users)
     elif 'Members' in session['groups']:
         tasks = get_tasks(session['IdToken'], session['username'])
         return render_template('members.html', role='Member', tasks=tasks)
@@ -207,6 +208,17 @@ def get_tasks(IdToken, username=None):
     response = requests.get(url + path, headers=headers, data=payload).json()
     return response
 
+
+def get_users(IdToken):
+    """
+    Get all users.
+    """
+    path = "/users"
+    headers = {
+        'Token': IdToken
+    }
+    response = requests.get(url + path, headers=headers).json()
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True)
