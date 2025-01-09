@@ -15,6 +15,9 @@ url = os.getenv('API_URL')
 # Route for the home page
 @app.route('/')
 def index():
+    """
+    Display the home page.
+    """
     if session.get('username') is None:
         return render_template('index.html')
     return redirect(url_for('dashboard'))
@@ -23,7 +26,12 @@ def index():
 # Route for the dashboard page
 @app.route('/dashboard')
 def dashboard():
-    # Default view
+    """
+    Display the dashboard for the user based on their role.
+    """
+    if session.get('username') is None:
+        return redirect(url_for('index'))
+
     if 'Admins' in session['groups']:
         tasks = get_tasks(session['IdToken'])
         users = get_users(session['IdToken'])
@@ -65,6 +73,9 @@ def login():
 # Route for logging out the user
 @app.route('/logout')
 def logout():
+    """
+    Log out the user and clear their session information.
+    """
     session.clear()
     return redirect(url_for('index'))
 
@@ -76,7 +87,6 @@ def signup():
     Sign up a new user and send a confirmation code to their email.
     """
     if request.method == 'POST':
-        group_name = request.form['group_name'].capitalize()
         session['username'] = request.form['username']
         session['email'] = request.form['email']
         password = request.form['password']
@@ -85,7 +95,6 @@ def signup():
             "username": session['username'],
             "email": session['email'],
             "password": password,
-            "group_name": group_name
         })
         headers = {'Content-Type': 'application/json'}
         requests.post(url + path, headers=headers, data=payload)
@@ -116,7 +125,7 @@ def confirm():
         except Exception as e:
             return render_template('error.html', error_code=500, error_message=str(e))
         finally:
-            session.pop('username', None)
+            session.clear()
         return redirect(url_for('login'))
 
     return render_template('confirm.html')
@@ -204,6 +213,8 @@ def page_not_found(e):
 
 @app.errorhandler(Exception)
 def internal_server_error(e):
+    if session.get('groups') is None:
+        session.clear()
     return render_template('error.html', error_code=500, error_message="Internal error: " + str(e)), 500
 
 
