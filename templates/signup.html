@@ -20,6 +20,7 @@
 <body class="bg-gray-100 flex items-center justify-center h-screen">
     <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
         <h2 class="text-2xl font-bold mb-6">Sign Up</h2>
+        <a href="{{ url_for('index') }}" class="text-blue-500 underline mb-4 block">Home</a>
         <form action="/signup" method="post" onsubmit="return validatePasswords()">
             <div class="mb-4">
                 <label for="username" class="block text-gray-700">Username:</label>
