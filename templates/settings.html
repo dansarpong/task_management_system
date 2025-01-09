@@ -17,9 +17,9 @@
                     Enable Email Notifications
                 </label>
                 {% if email_notifications %}
-                    <input type="checkbox" id="email_notifications" name="email_notifications" checked>
+                    <input type="checkbox" id="email_notifications" name="email_notifications" class="border-gray-500 p-2" checked>
                 {% else %}
-                    <input type="checkbox" id="email_notifications" name="email_notifications">
+                    <input type="checkbox" id="email_notifications" name="email_notifications" class="border-gray-500 p-2">
                     <p class="text-sm text-gray-600 mt-2">Note: An email from AWS will be sent to you to verify your status after agreeing to enable email notifications</p>
                 {% endif %}
             </div>
