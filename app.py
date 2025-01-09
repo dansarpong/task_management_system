@@ -32,7 +32,7 @@ def dashboard():
         tasks = get_tasks(session['IdToken'], session['username'])
         return render_template('members.html', role='Member', tasks=tasks)
 
-    return redirect(url_for('login'))  # Or return a 403 Forbidden error
+    return redirect(url_for('login'))
 
 
 # Route for the login page and handling login logic
@@ -44,29 +44,29 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        try:
-            path = "/users/login"
-            payload = json.dumps({
-                "username": username,
-                "password": password
-            })
-            headers = {
-                'Content-Type': 'application/json'
-            }
-            response = requests.post(
-                url + path, headers=headers, data=payload).json()
-            session['username'] = username
-            session['groups'] = response['Groups']
-            session['IdToken'] = response['AuthenticationResult']['IdToken']
-            session['AccessToken'] = response[
-                'AuthenticationResult']['AccessToken']
-        except Exception as e:
-            session.clear()
-            return render_template('error.html', error_code=500, error_message="Invalid username or password")
+        path = "/users/login"
+        payload = json.dumps({
+            "username": username,
+            "password": password
+        })
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post(
+            url + path, headers=headers, data=payload).json()
+        session['username'] = username
+        session['groups'] = response['Groups']
+        session['IdToken'] = response['AuthenticationResult']['IdToken']
+        session['AccessToken'] = response['AuthenticationResult']['AccessToken']
 
         return redirect(url_for('dashboard'))
 
     return render_template('login.html')
+
+
+# Route for logging out the user
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
 
 
 # Route for the signup page
@@ -76,27 +76,20 @@ def signup():
     Sign up a new user and send a confirmation code to their email.
     """
     if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
         group_name = request.form['group_name'].capitalize()
-        try:
-            path = "/users/signup"
-            payload = json.dumps({
-                "username": username,
-                "password": password,
-                "email": email,
-                "group_name": group_name
-            })
-            headers = {
-                'Content-Type': 'application/json'
-            }
+        session['username'] = request.form['username']
+        session['email'] = request.form['email']
+        password = request.form['password']
+        path = "/users/signup"
+        payload = json.dumps({
+            "username": session['username'],
+            "email": session['email'],
+            "password": password,
+            "group_name": group_name
+        })
+        headers = {'Content-Type': 'application/json'}
+        requests.post(url + path, headers=headers, data=payload)
 
-            requests.post(url + path, headers=headers, data=payload)
-        except Exception as e:
-            return render_template('error.html', error_code=500, error_message=str(e))
-        session['username'] = username
-        session['email'] = email
         return redirect(url_for('confirm'))
 
     return render_template('signup.html')
@@ -118,25 +111,15 @@ def confirm():
                 "email": session['email'],
                 "confirmation_code": confirmation_code
             })
-            headers = {
-                'Content-Type': 'application/json'
-            }
+            headers = {'Content-Type': 'application/json'}
             requests.post(url + path, headers=headers, data=payload)
         except Exception as e:
             return render_template('error.html', error_code=500, error_message=str(e))
         finally:
             session.pop('username', None)
-
         return redirect(url_for('login'))
 
     return render_template('confirm.html')
-
-
-# Route for logging out the user
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('index'))
 
 
 # Route for the settings page
@@ -145,29 +128,22 @@ def settings():
     """
     Display and update user settings.
     """
+    path = "/settings"
+    payload = json.dumps({"accessToken": session['AccessToken']})
+    headers = {'Content-Type': 'application/json'}
+
     if request.method == 'POST':
+        headers['Token'] = session['IdToken']
         email_notifications = request.form.get('email_notifications') == 'on'
-        try:
-            path = "/settings"
-            payload = json.dumps({
-                "email": session['email'],
-            })
-            headers = {
-                'Content-Type': 'application/json',
-                'Token': session['IdToken']
-            }
+        # enable or disable email notifications
+        if email_notifications and not session["email_notifications"]:
+            requests.post(url + path, headers=headers, data=payload)
+        elif not email_notifications and session["email_notifications"]:
+            requests.delete(url + path, headers=headers, data=payload)
+        return redirect(url_for('dashboard'))
 
-            # Update user notification status
-            if email_notifications and not session["email_notifications"]:
-                requests.post(url + path, headers=headers, data=payload)
-            elif not email_notifications and session["email_notifications"]:
-                requests.delete(url + path, headers=headers, data=payload)
-
-        except Exception as e:
-            return render_template('error.html', error_code=500, error_message=str(e))
-        return redirect(url_for('settings'))
-
-    session["email_notifications"] = get_notification_status(session['AccessToken'])
+    response = requests.get(url + path, data=payload, headers=headers).json()
+    session["email_notifications"] = response['verified']
     return render_template('settings.html', email_notifications=session["email_notifications"])
 
 
@@ -177,25 +153,22 @@ def create_task():
     """
     Create a task for the user and redirect to the dashboard.
     """
+    path = "/tasks"
     task_name = request.form['name']
     task_status = request.form['status']
     task_assignee = request.form['assignee']
     task_deadline = request.form['deadline'] or None
-    try:
-        path = "/tasks"
-        payload = json.dumps({
-            "name": task_name,
-            "status": task_status,
-            "assignee": task_assignee,
-            "deadline": task_deadline
-        })
-        headers = {
-            'Content-Type': 'application/json',
-            'Token': session['IdToken']
-        }
-        requests.post(url + path, headers=headers, data=payload)
-    except Exception as e:
-        return render_template('error.html', error_code=500, error_message=str(e))
+    payload = json.dumps({
+        "name": task_name,
+        "status": task_status,
+        "assignee": task_assignee,
+        "deadline": task_deadline
+    })
+    headers = {
+        'Content-Type': 'application/json',
+        'Token': session['IdToken']
+    }
+    requests.post(url + path, headers=headers, data=payload)
     return redirect(url_for('dashboard'))
 
 
@@ -204,39 +177,34 @@ def update_task(task_id):
     """
     Update a task in the database and redirect to the dashboard.
     """
+    path = f"/tasks/{task_id}"
     task_name = request.form['name']
     task_status = request.form['status']
     task_assignee = request.form['assignee']
     task_deadline = request.form['deadline'] or None
-    try:
-        path = f"/tasks/{task_id}"
-        payload = json.dumps({
-            "name": task_name,
-            "status": task_status,
-            "assignee": task_assignee,
-            "deadline": task_deadline
-        })
-        headers = {
-            'Content-Type': 'application/json',
-            'Token': session['IdToken']
-        }
-        requests.put(url + path, headers=headers, data=payload)
-    except Exception as e:
-        return render_template('error.html', error_code=500, error_message=str(e))
+    payload = json.dumps({
+        "name": task_name,
+        "status": task_status,
+        "assignee": task_assignee,
+        "deadline": task_deadline
+    })
+    headers = {
+        'Content-Type': 'application/json',
+        'Token': session['IdToken']
+    }
+    requests.put(url + path, headers=headers, data=payload)
     return redirect(url_for('dashboard'))
+
 
 # Error handling
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('error.html', error_code=404, error_message="Page not found"), 404
 
+
 @app.errorhandler(Exception)
 def internal_server_error(e):
     return render_template('error.html', error_code=500, error_message="Internal error: " + str(e)), 500
-
-# @app.errorhandler()
-# def handle_exception(e):
-#     return render_template('error.html', error_code=500, error_message=str(e)), 500
 
 
 # Helper functions
@@ -245,13 +213,11 @@ def get_tasks(IdToken, username=None):
     Get all tasks for the user.
     """
     path = "/tasks"
-    payload = {}
     headers = {
         'Token': IdToken,
         'Member': username if username else ''
     }
-
-    response = requests.get(url + path, headers=headers, data=payload).json()
+    response = requests.get(url + path, headers=headers).json()
     return response
 
 
@@ -260,25 +226,10 @@ def get_users(IdToken):
     Get all users.
     """
     path = "/users"
-    headers = {
-        'Token': IdToken
-    }
+    headers = {'Token': IdToken}
     response = requests.get(url + path, headers=headers).json()
     return response
 
-def get_notification_status(AccessToken):
-    """
-    Get user notification status.
-    """
-    path = "/settings"
-    payload = json.dumps({
-        "accessToken": AccessToken
-    })
-    headers = {
-        'Content-Type': 'application/json'
-    }
-    response = requests.get(url + path, data=payload, headers=headers).json()
-    return response['verified']
 
 # Run the app
 if __name__ == '__main__':
