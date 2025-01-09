@@ -15,8 +15,7 @@ url = os.getenv('API_URL')
 # Route for the home page
 @app.route('/')
 def index():
-    user = session.get('user')
-    if not user:
+    if session.get('username') is None:
         return render_template('index.html')
     return redirect(url_for('dashboard'))
 
@@ -62,7 +61,8 @@ def login():
             session['AccessToken'] = response[
                 'AuthenticationResult']['AccessToken']
         except Exception as e:
-            return render_template('error.html', error_code=500, error_message=str(e))
+            session.clear()
+            return render_template('error.html', error_code=500, error_message="Invalid username or password")
 
         return redirect(url_for('dashboard'))
 
@@ -139,6 +139,38 @@ def logout():
     return redirect(url_for('index'))
 
 
+# Route for the settings page
+@app.route('/settings', methods=['POST', 'GET'])
+def settings():
+    """
+    Display and update user settings.
+    """
+    if request.method == 'POST':
+        email_notifications = request.form.get('email_notifications') == 'on'
+        try:
+            path = "/settings"
+            payload = json.dumps({
+                "email": session['email'],
+            })
+            headers = {
+                'Content-Type': 'application/json',
+                'Token': session['IdToken']
+            }
+
+            # Update user notification status
+            if email_notifications and not session["email_notifications"]:
+                requests.post(url + path, headers=headers, data=payload)
+            elif not email_notifications and session["email_notifications"]:
+                requests.delete(url + path, headers=headers, data=payload)
+
+        except Exception as e:
+            return render_template('error.html', error_code=500, error_message=str(e))
+        return redirect(url_for('settings'))
+
+    session["email_notifications"] = get_notification_status(session['AccessToken'])
+    return render_template('settings.html', email_notifications=session["email_notifications"])
+
+
 # Tasks routes
 @app.route('/create_task', methods=['POST'])
 def create_task():
@@ -193,7 +225,21 @@ def update_task(task_id):
         return render_template('error.html', error_code=500, error_message=str(e))
     return redirect(url_for('dashboard'))
 
+# Error handling
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('error.html', error_code=404, error_message="Page not found"), 404
 
+@app.errorhandler(Exception)
+def internal_server_error(e):
+    return render_template('error.html', error_code=500, error_message="Internal error: " + str(e)), 500
+
+# @app.errorhandler()
+# def handle_exception(e):
+#     return render_template('error.html', error_code=500, error_message=str(e)), 500
+
+
+# Helper functions
 def get_tasks(IdToken, username=None):
     """
     Get all tasks for the user.
@@ -220,19 +266,20 @@ def get_users(IdToken):
     response = requests.get(url + path, headers=headers).json()
     return response
 
+def get_notification_status(AccessToken):
+    """
+    Get user notification status.
+    """
+    path = "/settings"
+    payload = json.dumps({
+        "accessToken": AccessToken
+    })
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    response = requests.get(url + path, data=payload, headers=headers).json()
+    return response['verified']
 
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('error.html', error_code=404, error_message="Page not found"), 404
-
-@app.errorhandler(500)
-def internal_server_error(e):
-    return render_template('error.html', error_code=500, error_message="Internal server error"), 500
-
-@app.errorhandler(Exception)
-def handle_exception(e):
-    return render_template('error.html', error_code=500, error_message="An unknown error occured"), 500
-
-
+# Run the app
 if __name__ == '__main__':
     app.run(debug=True)
