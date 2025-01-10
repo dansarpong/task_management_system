@@ -20,24 +20,34 @@
     <div class="container mx-auto p-4">
         <form method="POST">
             <div class="mb-4">
-                {% if email_notifications %}
-                    <button type="submit" name="email_notifications" value="disable" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                {% if email_notifications and not is_admin %}
+                    <button type="submit" name="action" value="email-disable" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
                         Disable Email Notifications
                     </button>
                 {% else %}
-                    <button type="submit" name="email_notifications" value="enable" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    <button type="submit" name="action" value="email-enable" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                         Enable Email Notifications
                     </button>
                     <p class="text-sm text-gray-600 mt-2">Note: An email from AWS will be sent to you to verify your status after agreeing to enable email notifications</p>
                 {% endif %}
+                {% if is_admin %}
+                    <p class="text-sm text-gray-600 mt-2">Note: Admins are adviced to have notifications on and hence, can't disable email notifications</p>
+                {% endif %}
             </div>
-            {% if not admin_request %}
+
             <div class="mb-4">
-                <button type="submit" name="admin_request" value="true" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+            {% if not is_admin and email_notifications %}
+                <button type="submit" name="action" value="admin-request" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
                     Request Admin Access
                 </button>
+            {% elif not is_admin and not email_notifications %}
+                <button type="submit" name="action" value="admin-request" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" disabled>
+                    Request Admin Access
+                </button>
+                <p class="text-sm text-gray-600 mt-2">Note: You have to enable email notifications to proceed</p>
+                {% endif %}
             </div>
-            {% endif %}
+
         </form>
     </div>
 </body>

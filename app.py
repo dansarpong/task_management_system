@@ -140,20 +140,25 @@ def settings():
     path = "/settings"
     payload = json.dumps({"accessToken": session['AccessToken']})
     headers = {'Content-Type': 'application/json'}
+    is_admin = True if "Admins" in session['groups'] else False
 
     if request.method == 'POST':
-        headers['Token'] = session['IdToken']
-        email_notifications = request.form.get('email_notifications') == 'on'
+        action = request.form.get('action')
+        headers['Action'] = action
         # enable or disable email notifications
-        if email_notifications and not session["email_notifications"]:
+        if action == "email-enable" and not session["email_notifications"]:
             requests.post(url + path, headers=headers, data=payload)
-        elif not email_notifications and session["email_notifications"]:
-            requests.delete(url + path, headers=headers, data=payload)
+        elif action == "email-disable" and session["email_notifications"]:
+            response = requests.delete(url + path, headers=headers, data=payload)
+        # handle admin access request
+        elif action == "admin-request" and not is_admin:
+            requests.post(url + path, headers=headers, data=payload)
+
         return redirect(url_for('dashboard'))
 
     response = requests.get(url + path, data=payload, headers=headers).json()
     session["email_notifications"] = response['verified']
-    return render_template('settings.html', email_notifications=session["email_notifications"])
+    return render_template('settings.html', email_notifications=session["email_notifications"], is_admin=is_admin)
 
 
 # Tasks routes
@@ -213,7 +218,8 @@ def page_not_found(e):
 
 @app.errorhandler(Exception)
 def internal_server_error(e):
-    if session.get('groups') is None:
+    if str(e).startswith("\'"):
+        e = "Missing credentials"
         session.clear()
     return render_template('error.html', error_code=500, error_message="Internal error: " + str(e)), 500
 
