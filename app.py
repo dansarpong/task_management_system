@@ -34,7 +34,7 @@ def dashboard():
 
     if 'Admins' in session['groups']:
         tasks = get_tasks(session['IdToken'])
-        users = get_users(session['IdToken'])
+        users = get_members(session['IdToken'])
         return render_template('admin.html', role='Admin', tasks=tasks, users=users)
     elif 'Members' in session['groups']:
         tasks = get_tasks(session['IdToken'], session['username'])
@@ -65,7 +65,7 @@ def login():
         session['IdToken'] = response['AuthenticationResult']['IdToken']
         session['AccessToken'] = response['AuthenticationResult']['AccessToken']
 
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('index'))
 
     return render_template('login.html')
 
@@ -97,7 +97,8 @@ def signup():
             "password": password,
         })
         headers = {'Content-Type': 'application/json'}
-        requests.post(url + path, headers=headers, data=payload)
+        response = requests.post(url + path, headers=headers, data=payload)
+        response.raise_for_status()
 
         return redirect(url_for('confirm'))
 
@@ -121,7 +122,8 @@ def confirm():
                 "confirmation_code": confirmation_code
             })
             headers = {'Content-Type': 'application/json'}
-            requests.post(url + path, headers=headers, data=payload)
+            response = requests.post(url + path, headers=headers, data=payload)
+            response.raise_for_status()
         except Exception as e:
             return render_template('error.html', error_code=500, error_message=str(e))
         finally:
@@ -147,16 +149,18 @@ def settings():
         headers['Action'] = action
         # enable or disable email notifications
         if action == "email-enable" and not session["email_notifications"]:
-            requests.post(url + path, headers=headers, data=payload)
+            response = requests.post(url + path, headers=headers, data=payload)
         elif action == "email-disable" and session["email_notifications"]:
             response = requests.delete(url + path, headers=headers, data=payload)
         # handle admin access request
         elif action == "admin-request" and not is_admin:
-            requests.post(url + path, headers=headers, data=payload)
+            response = requests.post(url + path, headers=headers, data=payload)
 
-        return redirect(url_for('dashboard'))
+        response.raise_for_status()
+        return redirect(url_for('index'))
 
     response = requests.get(url + path, data=payload, headers=headers).json()
+    response.raise_for_status()
     session["email_notifications"] = response['verified']
     return render_template('settings.html', email_notifications=session["email_notifications"], is_admin=is_admin)
 
@@ -182,8 +186,9 @@ def create_task():
         'Content-Type': 'application/json',
         'Token': session['IdToken']
     }
-    requests.post(url + path, headers=headers, data=payload)
-    return redirect(url_for('dashboard'))
+    response = requests.post(url + path, headers=headers, data=payload)
+    response.raise_for_status()
+    return redirect(url_for('index'))
 
 
 @app.route('/update_task/<task_id>', methods=['POST'])
@@ -206,8 +211,9 @@ def update_task(task_id):
         'Content-Type': 'application/json',
         'Token': session['IdToken']
     }
-    requests.put(url + path, headers=headers, data=payload)
-    return redirect(url_for('dashboard'))
+    response = requests.put(url + path, headers=headers, data=payload)
+    response.raise_for_status()
+    return redirect(url_for('index'))
 
 
 # Error handling
@@ -217,17 +223,14 @@ def page_not_found(e):
 
 
 @app.errorhandler(Exception)
-def internal_server_error(e):
-    if str(e).startswith("\'"):
-        e = "Missing credentials"
-        session.clear()
+def internal_error(e):
     return render_template('error.html', error_code=500, error_message="Internal error: " + str(e)), 500
 
 
 # Helper functions
 def get_tasks(IdToken, username=None):
     """
-    Get all tasks for the user.
+    Get all tasks for the user and try to sort by deadline and status
     """
     path = "/tasks"
     headers = {
@@ -235,16 +238,19 @@ def get_tasks(IdToken, username=None):
         'Member': username if username else ''
     }
     response = requests.get(url + path, headers=headers).json()
+    response.raise_for_status()
+    response = sorted(response, key=lambda x: ((x['deadline']['S']), x['status']['S']))
     return response
 
 
-def get_users(IdToken):
+def get_members(IdToken):
     """
     Get all users.
     """
     path = "/users"
     headers = {'Token': IdToken}
     response = requests.get(url + path, headers=headers).json()
+    response.raise_for_status()
     return response
 
 
