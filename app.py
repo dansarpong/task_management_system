@@ -59,7 +59,9 @@ def login():
         })
         headers = {'Content-Type': 'application/json'}
         response = requests.post(
-            url + path, headers=headers, data=payload).json()
+            url + path, headers=headers, data=payload)
+        check_response(response)
+        response = response.json()
         session['username'] = username
         session['groups'] = response['Groups']
         session['IdToken'] = response['AuthenticationResult']['IdToken']
@@ -98,7 +100,7 @@ def signup():
         })
         headers = {'Content-Type': 'application/json'}
         response = requests.post(url + path, headers=headers, data=payload)
-        response.raise_for_status()
+        check_response(response)
 
         return redirect(url_for('confirm'))
 
@@ -110,7 +112,7 @@ def signup():
 def confirm():
     """
     Confirm a user using the confirmation code sent to their email
-    and redirect to the login page.
+    and redirect to the login page
     """
     if request.method == 'POST':
         confirmation_code = request.form['code']
@@ -123,7 +125,7 @@ def confirm():
             })
             headers = {'Content-Type': 'application/json'}
             response = requests.post(url + path, headers=headers, data=payload)
-            response.raise_for_status()
+            check_response(response)
         except Exception as e:
             return render_template('error.html', error_code=500, error_message=str(e))
         finally:
@@ -156,7 +158,7 @@ def settings():
         elif action == "admin-request" and not is_admin:
             response = requests.post(url + path, headers=headers, data=payload)
 
-        response.raise_for_status()
+        check_response(response)
         return redirect(url_for('index'))
 
     response = requests.get(url + path, data=payload, headers=headers).json()
@@ -186,7 +188,7 @@ def create_task():
         'Token': session['IdToken']
     }
     response = requests.post(url + path, headers=headers, data=payload)
-    response.raise_for_status()
+    check_response(response)
     return redirect(url_for('index'))
 
 
@@ -211,8 +213,23 @@ def update_task(task_id):
         'Token': session['IdToken']
     }
     response = requests.put(url + path, headers=headers, data=payload)
-    response.raise_for_status()
+    check_response(response)
     return redirect(url_for('index'))
+
+
+@app.route('/delete_task/<task_id>', methods=['POST'])
+def delete_task(task_id):
+    """
+    Delete a task from the database
+    """
+    path = f"/tasks/{task_id}"
+    headers = {
+        'Content-Type': 'application/json',
+        'Token': session['IdToken']
+    }
+    response = requests.delete(url + path, headers=headers)
+    check_response(response)
+    return redirect(url_for('dashboard'))
 
 
 # Error handling
@@ -229,7 +246,7 @@ def internal_error(e):
 # Helper functions
 def get_tasks(IdToken, username=None):
     """
-    Get all tasks for the user and try to sort by deadline and status
+    Get all tasks for the user and try to sort by status and deadline
     """
     path = "/tasks"
     headers = {
@@ -237,7 +254,8 @@ def get_tasks(IdToken, username=None):
         'Member': username if username else ''
     }
     response = requests.get(url + path, headers=headers).json()
-    response = sorted(response, key=lambda x: ((x['deadline']['S']), x['status']['S']))
+    status_order = {'ongoing': 1, 'pending': 2, 'completed': 3}
+    response = sorted(response, key=lambda x: (status_order[x['status']['S']], x['deadline']['S']))
     return response
 
 
@@ -249,6 +267,14 @@ def get_members(IdToken):
     headers = {'Token': IdToken}
     response = requests.get(url + path, headers=headers).json()
     return response
+
+
+def check_response(response):
+    """
+    Check if the response is successful or raise an exception.
+    """
+    if response.status_code != 200:
+        raise Exception("Request failed: " + response.text)
 
 
 # Run the app

@@ -29,35 +29,50 @@
         <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded">Create Task</button>
     </form>
     <h2 class="text-xl font-bold mb-4">All Tasks</h2>
-    {% for task in tasks %}
-    <div class="bg-white shadow-md rounded p-6 mb-4">
-        <form method="POST" action="{{ url_for('update_task', task_id=task.id.N) }}">
-            <div class="form-group mb-4">
-                <label for="name" class="block text-gray-700">Task Name:</label>
-                <input type="text" name="name" value="{{ task.name.S }}" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-            </div>
-            <div class="form-group mb-4">
-                <label for="deadline" class="block text-gray-700">Deadline:</label>
-                <input type="date" name="deadline" value="{{ task.deadline.S }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-            </div>
-            <div class="form-group mb-4">
-                <label for="assignee" class="block text-gray-700">Assigned To:</label>
-                <select name="assignee" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                    {% for user in users %}
-                    <option value="{{ user.username }}" {% if task.assignee.S == user.username %}selected{% endif %}>{{ user.username }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group mb-4">
-                <label for="status" class="block text-gray-700">Status:</label>
-                <select name="status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                    <option value="pending" {% if task.status.S == 'pending' %}selected{% endif %}>pending</option>
-                    <option value="ongoing" {% if task.status.S == 'ongoing' %}selected{% endif %}>ongoing</option>
-                    <option value="completed" {% if task.status.S == 'completed' %}selected{% endif %}>completed</option>
-                </select>
-            </div>
-            <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded">Update Task</button>
-        </form>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for task in tasks %}
+        <div class="bg-white shadow-md rounded p-6 mb-4">
+            <form class="w-full" method="POST" action="{{ url_for('update_task', task_id=task.id.N) }}">
+                <div class="form-group mb-4">
+                    <label for="name" class="block text-gray-700">Task Name:</label>
+                    <input type="text" name="name" value="{{ task.name.S }}" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                </div>
+                <div class="form-group mb-4">
+                    <label for="deadline" class="block text-gray-700">Deadline:</label>
+                    <input type="date" name="deadline" value="{{ task.deadline.S }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                </div>
+                <div class="form-group mb-4">
+                    <label for="assignee" class="block text-gray-700">Assigned To:</label>
+                    <select name="assignee" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        {% for user in users %}
+                        <option value="{{ user.username }}" {% if task.assignee.S == user.username %}selected{% endif %}>{{ user.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mb-4">
+                    <label for="status" class="block text-gray-700">Status:</label>
+                    <select name="status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        <option value="pending" {% if task.status.S == 'pending' %}selected{% endif %}>pending</option>
+                        <option value="ongoing" {% if task.status.S == 'ongoing' %}selected{% endif %}>ongoing</option>
+                        <option value="completed" {% if task.status.S == 'completed' %}selected{% endif %}>completed</option>
+                    </select>
+                </div>
+                <div class="flex items-end mb-4">
+                    <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded mr-2" title="Update Task">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </button>
+                    <form method="POST" action="{{ url_for('delete_task', task_id=task.id.N) }}">
+                        <button type="submit" class="bg-red-500 text-white py-2 px-4 rounded" title="Delete Task">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M9 6v12m6-12v12M4 6l1 14a2 2 0 002 2h10a2 2 0 002-2l1-14"/>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </form>
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 {% endblock %}
