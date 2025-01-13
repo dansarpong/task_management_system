@@ -24,7 +24,7 @@
                     <button type="submit" name="action" value="email-disable" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
                         Disable Email Notifications
                     </button>
-                {% else %}
+                {% elif not email_notifications and not is_admin %}
                     <button type="submit" name="action" value="email-enable" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                         Enable Email Notifications
                     </button>
