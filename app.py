@@ -160,7 +160,6 @@ def settings():
         return redirect(url_for('index'))
 
     response = requests.get(url + path, data=payload, headers=headers).json()
-    response.raise_for_status()
     session["email_notifications"] = response['verified']
     return render_template('settings.html', email_notifications=session["email_notifications"], is_admin=is_admin)
 
@@ -238,7 +237,6 @@ def get_tasks(IdToken, username=None):
         'Member': username if username else ''
     }
     response = requests.get(url + path, headers=headers).json()
-    response.raise_for_status()
     response = sorted(response, key=lambda x: ((x['deadline']['S']), x['status']['S']))
     return response
 
@@ -250,7 +248,6 @@ def get_members(IdToken):
     path = "/users"
     headers = {'Token': IdToken}
     response = requests.get(url + path, headers=headers).json()
-    response.raise_for_status()
     return response
 
 
