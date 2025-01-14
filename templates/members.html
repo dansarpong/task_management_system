@@ -17,6 +17,10 @@
                     <label for="deadline" class="block text-gray-700">Deadline:</label>
                     <input type="date" name="deadline" value="{{ task.deadline.S }}" class="mt-1 block w-full border-gray-500 rounded-md shadow-sm p-2" disabled>
                 </div>
+                <div>
+                    <label for="assignee" hidden>Assignee:</label>
+                    <input type="text" name="assignee" value="{{ task.assignee.S }}" class="mt-1 block w-full border-gray-500 rounded-md shadow-sm p-2" hidden>
+                </div>
                 <div class="form-group mb-4">
                     <label for="status" class="block text-gray-700">Status:</label>
                     <select name="status" class="mt-1 block w-full border-gray-500 rounded-md shadow-sm p-2">

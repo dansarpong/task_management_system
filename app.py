@@ -176,7 +176,7 @@ def create_task():
     task_name = request.form['name']
     task_status = request.form['status']
     task_assignee = request.form['assignee']
-    task_deadline = request.form['deadline'] or None
+    task_deadline = request.form.get('deadline', "")
     payload = json.dumps({
         "name": task_name,
         "status": task_status,
@@ -201,7 +201,7 @@ def update_task(task_id):
     task_name = request.form['name']
     task_status = request.form['status']
     task_assignee = request.form['assignee']
-    task_deadline = request.form['deadline'] or None
+    task_deadline = request.form.get('deadline', "")
     payload = json.dumps({
         "name": task_name,
         "status": task_status,
