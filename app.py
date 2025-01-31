@@ -9,7 +9,7 @@ load_dotenv(override=True)
 # Initialize the Flask app
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-url = os.getenv('API_URL')
+url = "https://2tzh9snyml.execute-api.eu-west-1.amazonaws.com/Test"
 
 
 # Route for the home page
@@ -24,7 +24,7 @@ def index():
 
 
 # Route for the dashboard page
-@app.route('/dashboard')
+@app.route('/dashboard/')
 def dashboard():
     """
     Display the dashboard for the user based on their role.
@@ -44,7 +44,7 @@ def dashboard():
 
 
 # Route for the login page and handling login logic
-@app.route('/login', methods=['POST', 'GET'])
+@app.route('/login/', methods=['POST', 'GET'])
 def login():
     """
     Log in a user and store their session information.
@@ -73,7 +73,7 @@ def login():
 
 
 # Route for logging out the user
-@app.route('/logout')
+@app.route('/logout/')
 def logout():
     """
     Log out the user and clear their session information.
@@ -83,7 +83,7 @@ def logout():
 
 
 # Route for the signup page
-@app.route('/signup', methods=['POST', 'GET'])
+@app.route('/signup/', methods=['POST', 'GET'])
 def signup():
     """
     Sign up a new user and send a confirmation code to their email.
@@ -108,7 +108,7 @@ def signup():
 
 
 # Route for the confirmation page
-@app.route('/confirm', methods=['POST', 'GET'])
+@app.route('/confirm/', methods=['POST', 'GET'])
 def confirm():
     """
     Confirm a user using the confirmation code sent to their email
@@ -136,7 +136,7 @@ def confirm():
 
 
 # Route for the settings page
-@app.route('/settings', methods=['POST', 'GET'])
+@app.route('/settings/', methods=['POST', 'GET'])
 def settings():
     """
     Display and update user settings.
@@ -167,7 +167,7 @@ def settings():
 
 
 # Tasks routes
-@app.route('/create_task', methods=['POST'])
+@app.route('/create_task/', methods=['POST'])
 def create_task():
     """
     Create a task for the user and redirect to the dashboard.
@@ -192,7 +192,7 @@ def create_task():
     return redirect(url_for('index'))
 
 
-@app.route('/update_task/<task_id>', methods=['POST'])
+@app.route('/update_task/<task_id>/', methods=['POST'])
 def update_task(task_id):
     """
     Update a task in the database and redirect to the dashboard.
@@ -217,7 +217,7 @@ def update_task(task_id):
     return redirect(url_for('index'))
 
 
-@app.route('/delete_task/<task_id>', methods=['POST'])
+@app.route('/delete_task/<task_id>/', methods=['POST'])
 def delete_task(task_id):
     """
     Delete a task from the database
